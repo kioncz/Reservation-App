@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: reservations-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: contraseña_segura
+      MYSQL_DATABASE: reservations_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pcontraseña_segura"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./Back_end reservation
+      dockerfile: Dockerfile
+    container_name: reservations-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: contraseña_segura
+      DB_NAME: reservations_db
+      JWT_SECRET: mi_clave_secreta_super_segura
+      JWT_EXPIRES_IN: 2h
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./Front_end reservation
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000/api
+    container_name: reservations-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:

@@ -1,0 +1,8 @@
+node_modules
+.git
+.env
+*.lognode_modules
+.env
+.git
+npm-debug.log
+pnpm-debug.log
