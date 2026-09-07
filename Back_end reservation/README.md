@@ -199,6 +199,8 @@ JWT_EXPIRES_IN=2h
 Cuando el backend se ejecuta dentro de Docker Compose, `DB_HOST` debe ser
 `db`, porque ese es el nombre del servicio MySQL dentro de Docker.
 
+P.D: En caso de utilizar un puerto definido, agregar una nueva variable de entorno asignando el puerto.
+
 ## Instalacion
 
 Desde esta carpeta:
