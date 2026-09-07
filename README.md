@@ -47,3 +47,7 @@ docker compose down
 ```
 
 Este comando detiene los servicios sin eliminar el volumen de datos. No usar `docker compose down -v` salvo que se quiera borrar la base de datos de Docker.
+
+## Notas
+
+Recordar que las claves deben cambiarse por las que usted utilice, estas son solo claves de pruebas
