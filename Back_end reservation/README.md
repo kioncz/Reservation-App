@@ -7,6 +7,60 @@ con Express, utiliza MySQL para persistir usuarios, eventos y reservaciones, y
 protege las operaciones privadas mediante tokens JWT.
 
 La API utiliza el prefijo `/api` para sus rutas.
+## Arquitectura del sistema
+
+La aplicacion sigue una arquitectura en capas con separacion de responsabilidades:
+
+```text
+┌─────────────┐     HTTP/JSON      ┌──────────────────────────────────────┐
+│  Frontend    │ ◄───────────────► │              Backend (Express)       │
+│  React+Vite  │   JWT Bearer      │                                      │
+└─────────────┘                    │  routes/ ──► middlewares ──►         │
+                                   │     │           (JWT + rol admin)    │
+                                   │     ▼                                │
+                                   │  controller/ ──► services/           │
+                                   │     │            (logica de negocio) │
+                                   │     ▼                                │
+                                   │  models/ ──► config/db_reserv.js     │
+                                   │                  (pool mysql2)       │
+                                   └──────────────────┬───────────────────┘
+                                                      │ SQL
+                                              ┌───────▼───────┐
+                                              │  MySQL 8.4    │
+                                              │ reservations_db│
+                                              └───────────────┘
+```
+
+Flujo de una peticion:
+
+1. La peticion HTTP entra por `app.mjs` (Express), que aplica los middlewares globales (`express.json`, `cors`) y enruta segun el prefijo (`/api/auth`, `/api/events`, `/api/reservations`).
+2. Las rutas protegidas pasan por `authMiddleware.mjs`, que valida el token JWT y, cuando corresponde, el rol de administrador (`verifyadmin`).
+3. El controlador valida la entrada y delega en la capa de servicios (logica de negocio, transacciones).
+4. Los modelos ejecutan las consultas SQL parametrizadas sobre el pool de conexiones de MySQL.
+5. La respuesta se devuelve en formato JSON con el codigo HTTP adecuado (200, 201, 400, 401, 403, 404, 409).
+
+Decisiones de diseño relevantes:
+
+- **Pool de conexiones** (`mysql2/promise`): reutiliza conexiones y mejora el rendimiento.
+- **Transacciones con bloqueo de fila** (`SELECT ... FOR UPDATE`): la creacion de reservas descuenta boletos de forma atomica, evitando sobreventa en peticiones concurrentes.
+- **JWT stateless**: el servidor no guarda sesiones; el rol viaja en el token y se verifica en cada peticion.
+- **Contenedores Docker**: backend y base de datos se levantan con Docker Compose; la BD se inicializa automaticamente con `database/init.sql`.
+
+## Ejecucion rapida (Docker)
+
+Desde la carpeta raiz del proyecto:
+
+```powershell
+docker compose up -d --build
+```
+
+- Backend: http://localhost:3000
+- Swagger UI: http://localhost:3000/api-docs
+- MySQL: localhost:3306 (volumen `mysql_data`)
+
+Para ejecutar solo el backend sin Docker: ver la seccion [Instalacion](#instalacion).
+
+
 
 ## Funcionamiento general
 

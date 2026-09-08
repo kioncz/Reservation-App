@@ -4,6 +4,67 @@ Aplicacion web para consultar eventos y gestionar reservas. Este proyecto contie
 
 ## Funcionamiento general
 
+## Arquitectura del frontend
+
+Arquitectura basada en componentes con manejo de estado global por contextos y una capa dedicada al consumo de la API:
+
+```text
+┌────────────────────────────────────────────┐
+│                 main.jsx                    │
+│                    │                        │
+│                 App.jsx                     │
+│                    │                        │
+│            AuthProvider (context)           │
+│            - token JWT en localStorage      │
+│            - datos del usuario              │
+│                    │                        │
+│              approuter.jsx                  │
+│        ┌──────────┼──────────────┐          │
+│        ▼          ▼              ▼          │
+│   Rutas publicas  Rutas privadas (proteg.) │
+│   - Login         - Menu principal          │
+│   - Registro      - Crear/editar evento     │
+│                   - Menu usuario + reservas │
+│                        │                    │
+│                        ▼                    │
+│                   api/ (Axios)              │
+│          envia Authorization: Bearer <JWT>  │
+│                        │                    │
+└────────────────────────┼────────────────────┘
+                         ▼
+            Backend REST (VITE_API_URL)
+            http://localhost:3000/api
+```
+
+Capas principales:
+
+- **`context/`**: contexto de autenticacion global. Persiste el token JWT en `localStorage` y expone el usuario y su rol al resto de la aplicacion.
+- **`routes/`**: definicion de rutas con React Router. Las rutas privadas verifican autenticacion y tipo de usuario antes de renderizar.
+- **`pages/`**: vistas principales (login, registro, menu, formularios de eventos, reservas del usuario).
+- **`components/`**: componentes reutilizables (formularios, tarjetas de evento, navegacion).
+- **`api/`**: encapsula las llamadas HTTP con Axios; unica capa que conoce la URL del backend (`VITE_API_URL`).
+
+Flujo tipico:
+
+1. El usuario inicia sesion; el backend responde con un JWT que se guarda en `localStorage`.
+2. Axios adjunta el token automaticamente en cada solicitud protegida.
+3. Segun el rol (`type_user`), el router muestra u oculta las acciones de administrador (crear, editar, eliminar eventos).
+4. Las operaciones de eventos y reservas consumen los endpoints REST del backend y actualizan el estado de la interfaz.
+
+## Ejecucion rapida (Docker)
+
+Desde la carpeta raiz del proyecto:
+
+```powershell
+docker compose up -d --build
+```
+
+- Frontend: http://localhost:5173
+- (El mismo comando levanta el backend y MySQL; ver README del backend.)
+
+Para desarrollo local sin Docker: ver [Ejecucion en desarrollo](#ejecucion-en-desarrollo).
+
+
 El frontend permite a los usuarios:
 
 - Registrarse e iniciar sesion.
